@@ -1,9 +1,8 @@
-## self-steering-ue4-beta
-A deep learning project to generate training data for image segmentation and steering predictions using the Unreal 4 Game Engine
+## An experiment in using Unreal 4 to generate datasets for image segmentation and self-steering predictions.
 
 I've been studying deep learning for a few months now. Earlier this year I came across fast.ai. Their approach and philosphy really resonated with me and I've enjoyed using their libraries of great Python tools. Lesson 3 of their online course deals with image semgentation and image regression. The lesson mentions how tedious it is to create training data for image segmentation, often requiring a human to create masks and labels for each datapoint by hand.
 
-I come from a video game art background. I've been making 3d digital environments for games for over 20 years, so I thought that I could devise a method to generate training data from a game engine, specifically, Unreal 4, using the fast.ai libraries and Pytorch to train a neural network that would predict the image segmentation of a camera shot taken from a 3D environment in the game engine. For further practice, I would then use those segmented images and steering data captured from the game engine as the training data for another neural network that would make steering predictions to keep a vehicle on a path.
+I come from a video game art background. I've been making 3d digital environments for games for over 20 years, so I thought that I could devise a method to generate training data from a game engine, specifically, Unreal 4, then use the fast.ai libraries and Pytorch to train a neural network that would predict the image segmentation of a camera shot taken from a 3D environment in the game engine. For further practice, I would then use those segmented images and steering data captured from the game engine as the training data for another neural network that would make steering predictions to keep a moving vehicle on a simple path.
 
 # Requirements
 
@@ -16,13 +15,16 @@ I come from a video game art background. I've been making 3d digital environment
 # Descriptions of contents
 
 - SteeringValuesProcessing.ipynb - jupyter notebook containing cells intended to be run individually as needed. These helped with the data management of steering values captured from Unreal, processing screenshots for size, name, and format needed for NN training.
+
 - steerPred_imageSegUE4.ipynb - juyter notebook that uses transfer learning from resnet34, data collected from Unreal and the SteeringValueProcessing notebook to train a Unet neural network to make image segmentation predictions.
+
 - steerPred_steerPredict.ipynb - notebook that uses transfer learning from resnet34, data generated from Unreal and the SteeringValueProcessing notebook to train a convoluted neural network to make steering predictions for a vehicle traveling along a path.
+
 - startPredictors.py - script that runs in the background that makes steering predictions based on camera output in Unreal 4
 
 # Generating a dataset for image segmentation
 
-In Unreal I created a simple path that winds through a little village. The path is clear, mostly uniform, gently curving, with no forks or intersections. I then created a camera with very simple controls: it always moves forward at a constant speed and steering is controlled through user input (keyoard or game controller). At every frame I recorded the steering value coming from the user into an array. After completion the array is dumped to a text file, which I process in the SteeringValuesProcessing notebook into a csv, which Unreal can read in. So, esentially what I've done is record the path of the camera. When I read that csv back into an array in Unreal, step through each value every frame, then feed that into the steering input, the camera will follow the exact same path as I initially drove, as long as the intial start position and orientation aren't changed. I then captured a screenshot at every frame while the camera followed the path. These screenshots comprise the images of the dataset. To create the labels I duplicated the 3D environment, replaced all the materials with flat, unlit, brightly-colored materials that correstpond to the different classes I want to predict; i.e road, grass, fence, house, sky, etc. Using the same camera moving along the previously-recorded path, I then took screenshots at every frame. The result is a perfectly aligned label, generated in seconds.
+In Unreal I created a simple path that winds through a little village. The path is clear, mostly uniform, gently curving, with no forks or intersections. I then created a camera with very simple controls: it always moves forward at a constant speed and steering is controlled through user input (keyoard or game controller). At every frame I recorded the steering value coming from the user into an array. After completion the array is dumped to a text file, which I process in the SteeringValuesProcessing notebook into a csv, which Unreal can read in. So, esentially what I've done is record the path of the camera. When I read that csv back into an array in Unreal, step through each value every frame, then feed that into the steering input, the camera will follow the exact same path as I initially drove, as long as the intial start position and orientation remain constant. I then captured a screenshot at every frame while the camera followed the path. These screenshots comprise the images of the dataset. To create the labels I duplicated the 3D environment, replaced all the materials with flat, unlit, brightly-colored materials that correspond to the different classes I want to predict; i.e road, grass, fence, house, sky, etc. Using the same camera moving along the previously-recorded path, I then took screenshots at every frame. The result is a perfectly aligned label, generated in seconds.
 
 <p align="center">
 <b>Image</b>  <img src="media/image.png" width="300px"><br>
@@ -48,18 +50,18 @@ Because the labels for the image segmentation are so dark, I multiplied each val
 
 # Making steering predictions
 
-The steerPred_steerPredict notebook shows my process of training the cnn. I was never able to get very good loss. It always minimized at  around 0.05, which is not very good for steering values that ranged from -1.0 to 1.0. I pressed on ahead anyway to see how it would perform in the game engine. Later, I found out that this approach had some major flaws, so the current version of this notebook reflects a lot of changes I made to the dataset. See <b>What Went Wrong</b> section below.
+The steerPred_steerPredict notebook shows my process of training the cnn. I was never able to get very good loss. It always minimized at  around 0.05, which is not very good for steering values that ranged from -1.0 to 1.0. I pressed on ahead anyway to see how it would perform in the game engine. Later, I found out that this approach had some major flaws, so the current version of this notebook reflects a lot of changes I made later to the dataset. See <b>What Went Wrong</b> section below.
 
 # Unreal and predictors setup
 
 I created the startPredictors.py script to take the output of a camera in Unreal, feed that through the image segmentation predictor, then process that prediction and feed it to the steering predictor, which would then in turn feed its prediction back to Unreal. The vehicle (traveling forward at a constant speed, to simplify my life) would update its steering values based on the predictions. For the Unreal setup I used a really simple Blueprint.
 
 <p align="center">
-<b>Image</b><img src="media/captureSteering.PNG" width="700px"><br>
+<img src="media/captureSteering.PNG" width="700px"><br>
 </h2>
 
 <p align="center">
-<b>Image</b><img src="media/steerBP.PNG" width="700px"><br>
+<img src="media/steerBP.PNG" width="700px"><br>
 </h2>
 
 For the 2d image capture and clipboard copy functionality I had to use this plugin: https://forums.unrealengine.com/development-discussion/blueprint-visual-scripting/4014-39-rama-s-extra-blueprint-nodes-for-you-as-a-plugin-no-c-required.
@@ -84,4 +86,14 @@ Admittedly, and by design, this was a very simple case. I figured the next step 
 
 As I built my path longer and it began to fold back toward itself I found that the predictor would get confused sometimes and drive off the road when it's steerCam could see other parts of the path. I was able to solve this problem by reducing the steerCam's vision range. I shrunk its capture aspect ration and angled it down slightly so it was looking more at the path in front of it and not all the way to the horizon. This not only reduced my training and prediction times, but also made a vehicle that stayed on the path better, regardless what was further up along the road or at its periphery.
 
-So far with this project I learned a lot about 
+# Future plans for this project: 
+
+- Implement image segmentation. It will require creating a much faster predictor. I'll probably have to create a custom architecture rather than using resnet34, or figure out some other techniques. I'm pretty new to all this, so any advice or ideas are encouraged.
+- Implement speed predictor. Currently the vehicle travels at a constant speed. I already have added some user control that allows adjustment of the speed multiplier on the fly, so the user can observe how fast the vehicle can travel before flying off the path.
+- Add data for when the vehicle is on the shoulder of the path. Currently if the vehicle passes over the red lane markers to the path's shoulder it doesn't know how to get back onto the road.
+- Intersections. It will be a challenge to train the vehicle to handle intersections. I haven't yet thought about what it will entail entirely.
+
+# Final Thoughts
+
+It's been a great learning project for me. I'm not an exerienced coder, so it's been challenging to have to figure out so much python functionality, but I'm still really excited about combining these new skills and my past experience using 3D game engines to create datasets and test machine learning ideas.
+
