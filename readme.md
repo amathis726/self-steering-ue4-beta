@@ -26,10 +26,10 @@ In Unreal I created a simple path that winds through a little village. The path 
 
 <p align="center">
 <b>Image</b><img src="media/image.png" width="300px"><br>
-</p>
+</h2>
 
 <h2 align="center">
-<b>Label</b> <img src="media/label.png" width="300px"><br>
+<b>Label</b><img src="media/label.png" width="300px"><br>
 </h2>
 
 I then had to do a lot of image processing on the label to get it into a format similar to the dataset I was emulating: http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamVid/. This entailed converting the colors to single gray values that corresponded to a predetermined code. For example, the code for 'house' was 8, so my processing converts all the red pixels in the label into a very dark gray (red 8, green 8, blue 8). The code for 'road' was 3, so my processing converts all the blue pixels in the label into an even darker gray (red 3, green 3, blue 3). And so on for each of the codes.
@@ -37,3 +37,29 @@ I then had to do a lot of image processing on the label to get it into a format 
 # Making image segmentation predictions
 
 The steerPred_imageSegUE4 notebook goes through my process of training a unet. In short, I was able to correctly classify around 95% of the pixels accurately. I thought it was pretty awesome that the unet was so good at figuring out what it was looking at. 
+
+# Generating a dataset for steering prediction (image regression)
+
+Because the labels for the image segmentation is so dark, I multiplied each value by (255/num of classes) so the grayscale image uses up the entire spectrum. It was then a lot easier to see the masks and evaluate predictions. For the targets of the image regression I used the steering values I captured while making the image segmentation dataset. 
+
+# Making steering predictions
+
+The steerPred_steerPredict notebook shows my process of training the cnn. I was never able to get very good loss. It always minimized at  around 0.05, which is not very good for steering values that ranged from -1.0 to 1.0. I pressed on ahead anyway to see how it would perform in the game engine.
+
+# Unreal and predictors setup
+
+I created the startPredictors.py script to take the output of a camera in Unreal, feed that through the image segmentation predictor, then process that prediction and feed it to the steering predictor, which would then in turn feed it prediction back to Unreal. The vehicle (traveling forward at a constant speed, to simplify my life) would update its steering values based on the predictions. For the Unreal setup I used a really simple Blueprint.
+
+<p align="center">
+<b>Image</b><img src="media/captureSteering.PNG" width="300px"><br>
+</h2>
+
+<p align="center">
+<b>Image</b><img src="media/steerBP.PNG" width="300px"><br>
+</h2>
+
+For the 2d image capture and clipboard copy functionality I had to use this plugin:https://forums.unrealengine.com/development-discussion/blueprint-visual-scripting/4014-39-rama-s-extra-blueprint-nodes-for-you-as-a-plugin-no-c-required.
+
+# What went wrong:-/
+
+This approach failed. First off, and most obviously, the image segmentation prediction was too slow. It was taking well over a second, which is not enough updates to keep the vehicle on the path, even at very slow speeds. Secondly, my steering predictor was too innacurate. Even after getting the image segmentation the steering prediction was so bad that it was pretty much entirely useless. I had to go back and rethink my approach. 
