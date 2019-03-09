@@ -76,7 +76,7 @@ For the 2d image capture and clipboard copy functionality I had to use this plug
 
 This approach failed. First off, and most obviously, the image segmentation prediction was too slow. It was taking well over one second, which is not enough updates to keep the vehicle on the path, even at very slow speeds. Secondly, my steering predictor was too innacurate. Even after predicting the image segmentation the steering prediction was so bad that it was pretty much entirely useless. I had to go back and rethink my approach.
 
-# New Approach
+## New Approach
 
 I decided to abandon image segmentation. I don't know enough about how to make it fast enough for my needs. So instead I decided to see what I could learn by focusing on the simplest problem: keeping the vehicle on an entirely straight path. In Unreal I created a flat-shaded gray path with bright red lane markings on both sides. My goal was to keep the vehicle between the red lane markers.
 
@@ -91,27 +91,27 @@ So I started anew with creating a dataset for the steering predictions. I captur
 <p align="center">
 <img src="media/newPath.PNG" width="500px"><br>
 </h2>
-#
+
 I then turned the vehicle about 80 degrees to the left while still placed in the center of the path. I then captured screenshots while turning to the right (1.0 steering value), and assigned labels evenly spaced from 1.0 to 0, thus telling the vehicle to turn sharply to the right whenever it found itself in the center of the path but turned toward the lane markings, and do minor corrections when nearly looking forward but still looking left of center. I then repeated this with the vehicle turned 80 degrees to the right, and assigned it labels evenly arranged from -1 to 0.
 
 <p align="center">
 <img src="media/newPath_center.PNG" width="500px"><br>
 </h2>
-#
+
 For cases where the vehicle found itself near a lane marking, either to the left or right side of the path, and looking straight down the path, I captured screenshots as I gently maneuvered back toward center and aligned it to look directly forward down the path. I assigned these labels ranged evenly from 0.5 to 0 and -0.5 to 0 respectively, telling the vehicle to move gradually from the edge of the path to the center and keep it aligned to move down the path.
 
 <p align="center">
 <img src="media/newPath_shoulder.PNG" width="500px"><br>
 </h2>
-#
+
 With this more carefully created dataset I then trained the CNN using the steerPred_steerPredict notebook. With this data I was able to get much better losses, eventually ending up around .005, a major improvement. For some reason that I don't really understand, I wasn't able to get my training loss to be less than my validation loss, as I was advised to in the fast.ai course (suggesting underfitting), but the results looked good and my predictor was giving me steering values really close to my labels. Later, I realized using resnet34 for transfer learning was probably overkill for this problem. I wasn't trying to really recognize anything but line angles and a simpler architecture would be more efficient.
 
 Using the same setup for Unreal as described above, I finally got my vehicle to stay between the red lines. I implemented a control override that allows the user to nudge the vehicle either left of right, to test it's abilitiy to correct its steering and stay on course.
 
-Admittedly, and by design, this was a very simple case. I figured the next step was to add some gentle curves to the path and see how it handled those. I had assumed, from the beginning, that I would have to expand my dataset to include data that would teach the cnn to navigate curves, but as I started to think of approaches to do this, I thought why not just make a curve and see how it handles it without adding any new data? Amazingly, the vehicle was able to navigate a gentle curve with no new training. I find it fascinating and exciting that it was able to generalize that training well enought that it didn't need new training data to tell it how to handle a path that wasn't totally straight.
+Admittedly, and by design, this was a very simple case. I figured the next step was to add some gentle curves to the path and see how it handled those. I had assumed, from the beginning, that I would have to expand my dataset to include data that would teach the CNN to navigate curves, but as I started to think of approaches to do this, I thought why not just make a curve and see how it handles it without adding any new data? Amazingly, the vehicle was able to navigate a gentle curve with no new training. I find it fascinating and exciting that it was able to generalize that training well enought that it didn't need new training data to tell it how to handle a path that wasn't totally straight.
 
 <p align="center">
-<img src="media/newPath_curve.PNG" width="700px"><br>
+<img src="media/newPath_curve.PNG" width="500px"><br>
 </h2>
 
 As I built my path longer and it began to bend back toward itself I found that the predictor would get confused sometimes and drive off the road when its steerCam could see other parts of the path. I was able to solve this problem by reducing the steerCam's vision range. I shrunk its capture aspect ratio and angled it down slightly so it was looking more at the path directly in front of it and not all the way to the horizon. This not only reduced my training and prediction times, but also made a vehicle that stayed on the path better, regardless what was further up along the road or at its periphery.
@@ -120,6 +120,14 @@ As I built my path longer and it began to bend back toward itself I found that t
 <img src="media/croppedImages.PNG" width="700px"><br>
   SteerCam's output cropped, with steer value targets above each pic.
 </h2>
+
+<p align="center">
+<img src="media/inAction.gif" width="500px"><br>
+  <b>Steer predictor in action, running in the Unreal editor. White numbers represent the incoming steer predictions.
+  I'm skipping a lot of frames here to keep the file small. It's not actually traveling this fast.
+  Notice at one point I try to nudge the vehicle off course (steer value goes to -1.0), but it's able to recover.:)</b>
+</h2>
+
 
 # Future plans for this project: 
 
