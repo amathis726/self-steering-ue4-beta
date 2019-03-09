@@ -119,8 +119,10 @@ As I built my path longer and it began to bend back toward itself I found that t
 
 <p align="center">
 <img src="media/croppedImages.PNG" width="700px"><br>
-  SteerCam's output cropped, with steer value targets above each pic.
+  <b>SteerCam's output cropped, with steer value targets above each pic.</b>
 </h2>
+
+
 
 <p align="center">
 <img src="media/inAction.gif" width="500px"><br>
