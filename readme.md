@@ -122,11 +122,10 @@ As I built my path longer and it began to bend back toward itself I found that t
   <b>SteerCam's output cropped, with steer value targets above each pic.</b>
 </h2>
 
-
-
+# Steer predictor in action
 <p align="center">
 <img src="media/inAction.gif" width="500px"><br>
-  <b>Steer predictor in action, running in the Unreal editor. White numbers represent the incoming steer predictions.
+  <b>Running in the Unreal editor. White numbers represent the incoming steer predictions.
   I'm skipping a lot of frames here to keep the file small. It's not actually traveling this fast.
   Notice at one point I try to nudge the vehicle off course (steer value goes to -1.0), but it's able to recover.:)</b>
 </h2>
