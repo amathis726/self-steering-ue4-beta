@@ -49,7 +49,7 @@ The steerPred_imageSegUE4 notebook goes through my process of training a Unet. I
 
 <p align="center">
 <img src="media/imageSegPredictions.PNG" width="700px"><br>
-<b>Left Column: Dataset images overlayed with labels. Right Column: Same dataset images overlayed with predictions.</b>
+  <b>Left Column:</b> Dataset images overlayed with labels. <b>Right Column:</b> Same dataset images overlayed with predictions.
 
 # Generating a dataset for steering prediction (regression)
 
