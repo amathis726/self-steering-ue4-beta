@@ -26,6 +26,7 @@ I come from a video game art background. I've been making 3d digital environment
   - the images and labels used to create the dataset
   - the pickle file that contains the unet and CNN
   - the Unreal project
+  
   These are too large for a git repository, but I'd be happy to share them via Dropbox if anyone is interested.
 
 # Generating a dataset for image segmentation
