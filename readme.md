@@ -1,8 +1,6 @@
 ## An experiment in using Unreal 4 to generate datasets for image segmentation and self-steering predictions.
 
-I've been studying machine learning and deep learning for a few months now. Earlier this year I came across fast.ai. Their approach and philosophy intrigued me and I've enjoyed using their libraries of great Python tools. Lesson 3 of their online course deals with image semgentation and image regression.
-
-The lesson mentions how tedious it is to create training data for image segmentation, often requiring a human to create masks and labels for each datapoint by hand. I come from a video game art background and I've been making 3d digital environments for games for over 20 years, so I thought that I could use my previous experience to devise a method of generating a dataset using a game engine, specifically Unreal 4, then use the fast.ai libraries and Pytorch to train a neural network that would predict the image segmentation of a camera shot taken from a 3D environment in the game engine. For further practice, I would then use those segmented images and steering data captured from the game engine as the training data for another neural network that would make steering predictions to keep a moving vehicle on a simple path.
+I've been studying machine learning and deep learning for a few months now. Earlier this year I came across fast.ai. Their approach and philosophy intrigued me and I've enjoyed using their libraries of great Python tools. Lesson 3 of their online course deals with image semgentation and image regression. The lesson mentions how tedious it is to create training data for image segmentation, often requiring a human to create masks and labels for each datapoint by hand. I come from a video game art background and I've been making 3d digital environments for games for over 20 years, so I thought that I could use my previous experience to devise a method of generating a dataset using a game engine, specifically Unreal 4. With this dataset I could then use the fast.ai libraries and Pytorch to train a neural network that would predict the image segmentation of a camera shot taken from a 3D environment in the game engine. For further practice, I would then use those segmented images and steering data captured from the game engine as the training data for another neural network that would make steering predictions to keep a moving vehicle on a simple path.
 
 # Requirements
 
@@ -16,11 +14,11 @@ The lesson mentions how tedious it is to create training data for image segmenta
 
 - <b>SteeringValuesProcessing.ipynb</b> - jupyter notebook containing cells intended to be run individually as needed. These helped with the data management of steering values captured from Unreal, processing screenshots for size, name, and format needed for NN training.
 
-- <b>steerPred_imageSegUE4.ipynb</b> - juyter notebook that uses transfer learning from resnet34, data collected from Unreal and the SteeringValueProcessing notebook to train a Unet neural network to make image segmentation predictions.
+- <b>steerPred_imageSegUE4.ipynb</b> - juyter notebook that uses transfer learning from resnet34, and data collected from Unreal and the <b>SteeringValueProcessing</b> notebook to train a Unet neural network to make image segmentation predictions.
 
-- <b>steerPred_steerPredict.ipynb</b> - notebook that uses transfer learning from resnet34, data generated from Unreal and the SteeringValueProcessing notebook to train a convoluted neural network to make steering predictions for a vehicle traveling along a path.
+- <b>steerPred_steerPredict.ipynb</b> - notebook that uses transfer learning from resnet34, and data generated from Unreal and the <b>SteeringValueProcessing</b> notebook to train a convoluted neural network to make steering predictions for a vehicle traveling along a path.
 
-- <b>startPredictors.py</b> - script that runs in the background that makes steering predictions based on camera output in Unreal 4.
+- <b>startPredictors.py</b> - script that runs in the background that makes steering predictions based on camera output from Unreal 4.
 
 - Not included in this repository: 
   - the images and labels used to create the dataset
@@ -61,7 +59,7 @@ The <b>steerPred_steerPredict</b> notebook shows my process of training the CNN.
 
 # Unreal and predictors setup
 
-I created the <b>startPredictors.py</b> script to take the output of a camera (the steerCam) in Unreal, feed that through the image segmentation predictor, then process that image and feed it to the steering predictor, which would then in turn feed its prediction back to Unreal. This needs to be started first and be running in the background before anything in Unreal executes. The vehicle (traveling forward at a constant speed, to simplify my life) updates its steering values based on the predictions. For the Unreal setup I created a simple Blueprint that acts on the vehicle (download to see full size):
+I created the <b>startPredictors.py</b> script to take the output of a camera (the steerCam) in Unreal, feed that through the image segmentation predictor, then process that image and feed it to the steering predictor, which would then in turn feed its prediction back to Unreal. This script needs to be started first and be running in the background before anything in Unreal executes. The vehicle (traveling forward at a constant speed, to simplify my life) updates its steering values based on the predictions. For the Unreal setup I created a simple Blueprint that acts on the vehicle (download to see full size):
 
 <p align="center">
 <img src="media/captureSteering.PNG" width="700px"><br>
@@ -84,7 +82,7 @@ I decided to abandon image segmentation. I don't know enough about how to make i
 I also set my mind to the problem of why my steering predictions were so bad. All of my experimenting and parameter tuning had done nothing to improve it. I reasoned that it must be my training data that was the culprit. It eventually dawned on me that I was providing contradictory training data to the model. In my effort to provide data that reflected all the situations the vehicle might find itself in, I was inadvertantly providing it with misleading and confusing data. For example, I wanted to provide data for what the vehicle should do when it finds itself near the outer edge of the path, so I steered over to the shoulder, then steered back toward the center. I captured the screenshots and steering data for this entire sequence, but actually the initial part of this sequence is not the kind of driving behavior I want my vehicle to emulate. When the vehicle is moving directly down the center of the road I don't want it to wildly steer to the shoulder. I want it to continue in the center of the road and make only small steering corrections as needed to keep it there. I realized I would have to be more careful about how I generated my dataset.
 
 <p align="center">
-<img src="media/badData.PNG" width="600px"><br>
+<img src="media/badData.PNG" width="700px"><br>
 </h2>
 
 So, with the new, simplified path I started anew with creating a dataset for the steering predictions. I captured frames of the vehicle at the center of the path, looking directly forward down the path. In the targets csv I assigned steer values of numbers very close to 0.0.
@@ -105,17 +103,17 @@ For cases where the vehicle found itself near a lane marking, either to the left
 <img src="media/newPath_shoulder.PNG" width="500px"><br>
 </h2>
 
-With this more carefully-created dataset I then trained the CNN using the <b>steerPred_steerPredict</b> notebook. With this data I was able to get much better losses, eventually ending up around .005, a major improvement. For some reason that I don't really understand, I wasn't able to get my training loss to be less than my validation loss, as I was advised to in the fast.ai course (suggesting underfitting), but the results looked good and my predictor was giving me steering values somewhat close to my targets. Later, I realized using resnet34 for transfer learning was probably overkill for this problem. I wasn't trying to really recognize anything but line angles and a simpler architecture would be more efficient.
+With this more carefully-created dataset I then trained the CNN using the <b>steerPred_steerPredict</b> notebook. With this data I was able to get much better losses, eventually ending up around .005, a major improvement. For some reason that I don't really understand, I wasn't able to get my training loss to be less than my validation loss, as I was advised to in the fast.ai course (suggesting underfitting), but the results looked good and my predictor was giving me steering values somewhat close to my targets. Later, I realized using resnet34 for transfer learning was probably overkill for this problem. I wasn't trying to really recognize anything but line angles and a simpler architecture would be more efficient and maybe give better results.
 
 Using the same setup for Unreal as described above, I finally got my vehicle to stay between the red lines. I implemented a control override that allows the user to nudge the vehicle either left of right, to test it's abilitiy to correct its steering and stay on course.
 
-Admittedly, and by design, this was a very simple case. I figured the next step was to add some gentle curves to the path and see how it handled those. I had assumed, from the beginning, that I would have to expand my dataset to include data that would teach the CNN to navigate curves, but as I started to think of approaches to do this, I thought why not just make a curve and see how it handles it without adding any new data? Amazingly, the vehicle was able to navigate the curve with no new training. I find it fascinating and exciting that the training generalized well enought that it didn't need new data to tell it how to handle a path that wasn't totally straight.
+Admittedly, and by design, this was a very simple case. I figured the next step was to add some gentle curves to the path and see how it handled those. I had assumed that I would have to expand my dataset to include data that would teach the CNN to navigate curves, but as I started to think of approaches to do this, I thought why not just make a curve and see how it handles it without adding any new data? Amazingly, the vehicle was able to navigate the curve with no new training. I find it fascinating and exciting that the training generalized well enought that it didn't need new data to tell it how to handle a path that wasn't totally straight.
 
 <p align="center">
 <img src="media/newPath_curve.PNG" width="500px"><br>
 </h2>
 
-As I built my path longer and it began to bend back toward itself I found that the predictor would get confused sometimes and drive off the road when its steerCam could see other parts of the path. I was able to solve this problem by reducing the steerCam's and dataset's vision range. I cropped the top half and angled the steerCam down slightly so it was looking more at the path directly in front of it and not all the way to the horizon. This not only reduced my training and prediction times, but also made a vehicle that stayed on the path better, regardless what was further up along the road or at its periphery.
+As I built my path longer and it began to bend back toward itself I found that the predictor would get confused sometimes and drive off the road when its steerCam could see other distant parts of the path. I was able to solve this problem by reducing the steerCam's and dataset's vision range. I cropped the top half and angled the steerCam down slightly so it was looking more at the path directly in front of it and not all the way to the horizon. This not only reduced my training and prediction times, but also made a vehicle that stayed on the path better, regardless of what was further up along the road or at its periphery.
 
 <p align="center">
 <img src="media/croppedImages.PNG" width="700px"><br>
@@ -125,16 +123,17 @@ As I built my path longer and it began to bend back toward itself I found that t
 # Steer predictor in action
 <p align="center">
 <img src="media/inAction.gif" width="500px"><br>
-  <b>Running in the Unreal editor.</b> The white numbers represent the incoming steer predictions.
+  <b>Running in the Unreal editor.</b> 
+  The white numbers represent the incoming steer predictions.
   I'm skipping a lot of frames here to keep the file small. It's not actually traveling this fast.
-  Notice at one point I try to nudge the vehicle off course (steer value goes to -1.0), but it's able to recover.
+  Notice that twice I try to manually nudge the vehicle off course (steer value goes to -1.0), but it's able to recover.
 </h2>
 
 
 # Future plans for this project: 
 
 - Implement image segmentation. It will require creating a much faster predictor. I'll probably have to create a custom architecture rather than using resnet34, or figure out some other techniques. I'm pretty new to all this, so any advice or ideas are encouraged.
-- Implement speed predictor. Currently the vehicle travels at a constant speed. I already have added some user control that allows adjustment of the speed multiplier on the fly, so the user can experiment with how fast the vehicle can travel before flying off the path.
+- Implement speed predictor. Currently the vehicle travels at a constant speed, but, to allow for user experimentation, I have added some user control that allows adjustment of the speed multiplier on the fly. Someday I'm hoping that I can train a CNN to predict a good speed with the goal of staying on the path.
 - Replace the resnet34 architecture used in the steer predictor CNN with something simpler and more efficient.
 - Add data for when the vehicle is on the shoulder of the path. Currently if the vehicle passes over the red lane markers it doesn't know how to get back onto the road.
 - Intersections. It will be a challenge to train the vehicle to handle intersections. I haven't yet thought about what it will entail entirely.
